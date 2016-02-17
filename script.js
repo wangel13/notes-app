@@ -1,63 +1,63 @@
 function NotesStore() {
   var key = 'notes';
-	this.subscribers = [];
+  this.subscribers = [];
 
-  this.add = function(note) {
-    var notes = this.all()
-		notes.push(note)
-		localStorage.setItem(key, JSON.stringify(notes));
+  this.add = function (note) {
+    var notes = this.all();
+    notes.push(note);
+    localStorage.setItem(key, JSON.stringify(notes));
     this.render();
-  }
+  };
 
-  this.edit = function(index, note) {
+  this.edit = function (index, note) {
     var allNotes = this.all();
     allNotes[index] = note;
     localStorage.setItem(key, JSON.stringify(allNotes));
     this.render();
-  }
+  };
 
-	this.all = function() {
-		return JSON.parse(localStorage.getItem(key))
-	}
+  this.all = function () {
+    return JSON.parse(localStorage.getItem(key)) || [];
+  };
 
-	this.deleteAll = function() {
-		localStorage.setItem(key, "[]")
-	}
+  this.deleteAll = function () {
+    localStorage.setItem(key, "[]");
+  };
 
-	this.notify = function(e) {
+  this.notify = function (e) {
 
-		if (e.key == key) {
-			console.log("local storage changed!!!")
-			var notes = JSON.parse(e.newValue)
+    if (e.key == key) {
+      console.log("local storage changed!!!");
+      var notes = JSON.parse(e.newValue);
       this.render();
-			for (var i = 0; i < this.subscribers.length; i++) {
-    		this.subscribers[i](notes)
-			}
-  	}
-	}
+      for (var i = 0; i < this.subscribers.length; i++) {
+        this.subscribers[i](notes);
+      }
+    }
+  };
 
 
-	this.subscribe = function(func) {
-		this.subscribers.push(func)
-	}
+  this.subscribe = function (func) {
+    this.subscribers.push(func);
+  };
 
-	window.addEventListener('storage', this.notify.bind(this), false);
+  window.addEventListener('storage', this.notify.bind(this), false);
 
-  this.render = function() {
+  this.render = function () {
     var notesView = new NotesListView();
     notesView.render(this.all());
-  }
+  };
 
 }
 
 function Note(title, body) {
   this.title = title;
-  this.body  = body;
+  this.body = body;
 }
 
 function AppView(id, storage) {
   this.id = id;
-  this.render = function() {
+  this.render = function () {
     var div = document.createElement('div');
     div.innerHTML = '<div class="container">\
                       <div id="notes"></div>\
@@ -87,52 +87,53 @@ function AppView(id, storage) {
                        </div>\
                      </div>';
     document.getElementById(this.id).appendChild(div);
-    document.getElementById('noteAdd').addEventListener('click', function(e) {
+    document.getElementById('noteAdd').addEventListener('click', function (e) {
       var note = new Note(document.getElementById('noteTitle').value, document.getElementById('noteBody').value);
       storage.add(note);
       document.getElementById('noteTitle').value = '';
       document.getElementById('noteBody').value = '';
     });
-    document.getElementById('saveEdit').addEventListener('click', function(e) {
+    document.getElementById('saveEdit').addEventListener('click', function (e) {
       var note = new Note(document.getElementById('noteTitleEdit').value, document.getElementById('noteBodyEdit').value);
       storage.edit(document.getElementById('idNote').value, note);
+      $('#myModal').modal('hide');
     });
-  }
+  };
 }
 
 function NoteView(index) {
-  this.render = function(note){
-    return '<h3>'+ note.title +'</h3> \
-            <p>'+ note.body +'</p>\
-            <a id="id'+index+'" href="#" data-toggle="modal" data-target="#myModal"><span class="glyphicon glyphicon-pencil"></span> edit</a>';
-  }
+  this.render = function (note) {
+    return '<h3>' + note.title + '</h3> \
+            <p>'+ note.body + '</p>\
+            <a id="id'+ index + '" href="#" data-toggle="modal" data-target="#myModal"><span class="glyphicon glyphicon-pencil"></span> edit</a>';
+  };
 }
 
 function NotesListView() {
-  this.render = function(notes){
+  this.render = function (notes) {
     document.getElementById('notes').innerHTML = '';
-    notes.forEach(function(item, index) {
+    notes.forEach(function (item, index) {
       var notesDiv = document.createElement('div');
       var note = new NoteView(index);
       notesDiv.innerHTML = note.render(item);
       document.getElementById('notes').appendChild(notesDiv);
-      document.getElementById('id' + index).addEventListener('click', function(e) {
+      document.getElementById('id' + index).addEventListener('click', function (e) {
         document.getElementById('noteTitleEdit').value = item.title;
         document.getElementById('noteBodyEdit').value = item.body;
         document.getElementById('idNote').value = index;
       });
 
-    })
-  }
+    });
+  };
 }
 
 
 
 
-var notes = new NotesStore()
-notes.subscribe(function(items) {
-  console.log("changed: " + JSON.stringify(items))
-})
+var notes = new NotesStore();
+notes.subscribe(function (items) {
+  console.log("changed: " + JSON.stringify(items));
+});
 
 var app = new AppView('app', notes);
 app.render();
